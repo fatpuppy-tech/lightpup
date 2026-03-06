@@ -1,0 +1,17 @@
+@import 'tailwindcss';
+
+/* Terminal (xterm) – match app UI */
+.terminal-container .xterm {
+  padding: 0.5rem;
+  height: 100%;
+}
+.terminal-container .xterm-viewport {
+  border-radius: 0.25rem;
+  background-color: #18181b !important;
+}
+.terminal-container .xterm-screen {
+  border-radius: 0.25rem;
+}
+.terminal-container canvas {
+  border-radius: 0.25rem;
+}

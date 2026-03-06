@@ -1,0 +1,13 @@
+# Rust backend artifacts
+/backend/target/
+
+# Node / frontend artifacts
+/frontend/node_modules/
+/frontend/dist/
+
+# Editor / IDE
+/.idea/
+/.vscode/
+
+# OS junk
+.DS_Store
