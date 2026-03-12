@@ -6,6 +6,7 @@ import {
   useState,
   type ReactNode,
 } from 'react'
+import { useNavigate } from 'react-router-dom'
 import type { AuthUser } from '../lib/api'
 import {
   auth2faVerify,
@@ -37,6 +38,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(null)
   const [loading, setLoading] = useState(true)
   const [setupRequired, setSetupRequired] = useState(false)
+  const navigate = useNavigate()
 
   const refresh = useCallback(async () => {
     setLoading(true)
@@ -62,16 +64,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [refresh])
 
   useEffect(() => {
-    setApi401Handler(() => setUser(null))
+    setApi401Handler(() => {
+      setUser(null)
+      setSetupRequired(false)
+      setLoading(false)
+      if (window.location.pathname !== '/login') {
+        navigate('/login', { replace: true })
+      }
+    })
     return () => setApi401Handler(null)
-  }, [])
+  }, [navigate])
 
   const login = useCallback(
     async (username: string, password: string) => {
       const res = await authLogin(username, password)
       if (res.needs_2fa) return { needs2fa: true }
       if (res.username) {
-        setUser({ username: res.username, id: '' })
         await refresh()
       }
       return {}
@@ -83,7 +91,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     async (code: string) => {
       const res = await auth2faVerify(code)
       if (res.username) {
-        setUser({ username: res.username, id: res.id ?? '' })
         await refresh()
       }
     },
