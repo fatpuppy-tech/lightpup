@@ -1,0 +1,26 @@
+---
+description: Backend (Rust + Axum + sqlx) conventions for LightPup
+globs: backend/**/*.rs
+alwaysApply: false
+---
+
+# Backend: Rust + Axum + sqlx
+
+## Error handling
+
+- Prefer `thiserror`/`anyhow` patterns already used in the repo.
+- Return consistent HTTP errors; avoid leaking secrets/tokens in error bodies.
+
+## API conventions
+
+- Keep request/response types in the existing `backend/src/api/*` modules.
+- Validate inputs early and return clear error messages for bad user input.
+
+## Database
+
+- Prefer `sqlx` patterns already in `backend/src/db/*`.
+- If schema changes are needed, add a migration in `backend/migrations/`.
+
+## Quality gates
+
+- Run (or keep code compatible with) `cargo fmt` and `cargo clippy`.

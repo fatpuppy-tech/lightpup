@@ -1,0 +1,23 @@
+---
+description: API contract + auth expectations (frontend <-> backend)
+globs: "{backend/src/api/**/*.rs,frontend/src/lib/api.ts,frontend/src/contexts/AuthContext.tsx}"
+alwaysApply: false
+---
+
+# API contracts (auth, errors, redirects)
+
+## Auth
+
+- Session/auth is cookie-based; frontend requests use `credentials: 'include'`.
+- Any API response with **HTTP 401** should be treated as “session expired / not authorized”.
+  - The frontend’s global 401 handler clears auth state and redirects to `/login`.
+
+## Errors
+
+- Backend should prefer structured JSON errors when possible; frontend will surface error strings to users.
+- For non-JSON responses, frontend treats HTML as a likely “wrong endpoint / expired session” signal.
+
+## When changing endpoints
+
+- Update types in `frontend/src/lib/api.ts` for new/changed responses.
+- Update any affected pages/components to keep UI states consistent (no stuck spinners).

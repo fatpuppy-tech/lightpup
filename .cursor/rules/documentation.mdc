@@ -1,0 +1,14 @@
+---
+description: Documentation conventions (whole repo)
+alwaysApply: true
+---
+
+# Documentation (keep `docs/` current)
+
+- Any change that affects behavior, UX flows, setup, configuration, operations, or developer workflow must update documentation under `docs/`.
+- If the topic is already documented, **update the existing doc** so it reflects the new behavior (don’t leave stale instructions).
+- If the topic is not documented yet, **add a new doc** in `docs/` (or extend the closest existing doc) with:
+  - What changed and why (brief)
+  - How to use/verify it (steps, screenshots if helpful)
+  - Any new env vars/config, defaults, and gotchas
+

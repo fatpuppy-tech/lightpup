@@ -1,0 +1,70 @@
+---
+description: Frontend (React + TS) patterns for LightPup
+globs: frontend/src/**/*.{ts,tsx}
+alwaysApply: false
+---
+
+# Frontend: React + TypeScript
+
+## Atomic Design (component architecture)
+
+- Use Atomic Design folders for UI components:
+  - `frontend/src/components/atoms/` — smallest, reusable primitives (buttons, inputs, icons).
+  - `frontend/src/components/molecules/` — simple compositions of atoms (form rows, labeled inputs).
+  - `frontend/src/components/organisms/` — feature-level sections composed of molecules/atoms (headers, sidebars, complex forms).
+  - `frontend/src/components/templates/` — page layouts / scaffolds (slot-based composition; minimal logic).
+  - `frontend/src/pages/` — route-level screens (data fetching + orchestration; minimal presentational UI).
+- Import boundaries:
+  - `atoms` may depend only on shared utilities/types, not on app state, routing, or API.
+  - `molecules` may depend on `atoms`.
+  - `organisms` may depend on `molecules` and `atoms`.
+  - `templates` may depend on `organisms` (and below) but should stay “layout-first”.
+  - `pages` may depend on anything, but should mostly compose templates/organisms and call APIs.
+- Keep API + auth side-effects out of `atoms/molecules` (no `api()` calls there).
+- Co-locate styles and tests with the component when possible:
+  - `Button.tsx`, `Button.module.css` (or equivalent), `Button.test.tsx`
+- Naming/export conventions:
+  - Component files use `PascalCase.tsx` and default-export the component.
+  - Prefer an `index.ts` barrel per atomic folder (or per component group) to keep imports tidy.
+  - Avoid deep relative imports like `../../../`; prefer stable aliases if the repo already has them.
+
+## Senior engineering principles (DRY, maintainability)
+
+- DRY: remove meaningful duplication, not “similarity”
+  - Prefer **clear duplication** over premature abstraction; abstract only after the pattern is stable.
+  - When extracting, keep the abstraction close to where it’s used (same folder) unless it’s truly shared.
+- Single responsibility per layer:
+  - `pages/`: orchestration + data fetching + routing concerns.
+  - `templates/organisms`: composition and UI state; minimal side effects.
+  - `atoms/molecules`: presentational + interaction only; no routing/auth/api.
+- Prefer composition over inheritance; prefer small pure helpers over clever generic utilities.
+- Keep data shapes consistent:
+  - Normalize API responses in one place (API layer or a single mapper), not ad-hoc across components.
+- Avoid “prop drilling by default”; use context intentionally (global-ish concerns only).
+- Error/empty/loading states are part of the UX:
+  - Always render an explicit empty state when lists have 0 items.
+  - Show actionable error messages (include status/context) rather than swallowing errors.
+- Accessibility by default:
+  - Use semantic elements, labels for inputs, and proper button types; keep focus order sane.
+- Performance hygiene:
+  - Don’t re-fetch on every render; memoize expensive derived values when measured/needed.
+  - Keep large lists virtualized or paginated when they grow.
+- Consistency beats personal preference:
+  - Follow existing patterns in the repo for routing, API calls, and state placement.
+
+## Data fetching + auth
+
+- Use `api()` from `frontend/src/lib/api.ts` for HTTP calls.
+- Assume **401 triggers redirect to `/login`** via the global 401 handler; don’t add per-call redirect logic.
+- Don’t leave pages in a spinner state: always clear local loading flags in `finally` blocks.
+
+## React patterns
+
+- Prefer function components + hooks.
+- Keep components small; extract reusable logic into hooks in `frontend/src/**/`.
+- Use React Router (`react-router-dom`) navigation rather than `window.location` (except for simple guards where needed).
+
+## Types
+
+- Prefer explicit API response types in `frontend/src/lib/api.ts` and reuse them across pages/components.
+- Don’t construct partial `AuthUser` objects—use `authMe()` / `refresh()` to obtain full user state.

@@ -1,0 +1,21 @@
+---
+description: Core repo conventions (LightPup)
+alwaysApply: true
+---
+
+# LightPup: core conventions
+
+- Keep changes **minimal and targeted**; avoid drive-by refactors.
+- Prefer **existing patterns** in the repo over introducing new frameworks or abstractions.
+- When handling errors, prefer **actionable messages** (include status/context) and avoid silent catches.
+- Avoid committing secrets (tokens, private keys, `.env` files). If needed, add examples as `*.example`.
+
+## Frontend/backed boundary
+
+- Frontend talks to the backend via `frontend/src/lib/api.ts`.
+- If a change touches API contracts, update **both** sides in the same PR.
+
+## Testing / verification
+
+- For Rust: prefer `cargo fmt`, `cargo clippy`, `cargo test` when relevant.
+- For frontend: prefer `pnpm lint` / `pnpm build` when relevant.
