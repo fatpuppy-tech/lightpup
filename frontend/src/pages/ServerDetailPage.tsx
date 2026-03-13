@@ -5,10 +5,12 @@ import { Label } from '../components/atoms/Label'
 import { Input } from '../components/atoms/Input'
 import { Button } from '../components/atoms/Button'
 import { ConfirmModal } from '../components/molecules/ConfirmModal'
+import { SudoPasswordModal } from '../components/molecules/SudoPasswordModal'
 import { Breadcrumbs } from '../components/molecules/Breadcrumbs'
 import { Tabs } from '../components/molecules/Tabs'
 import { PageMain } from '../components/layout/PageMain'
 import { useAuth } from '../contexts/AuthContext'
+import { useToast } from '../contexts/ToastContext'
 import { useTerminalOverlay } from '../contexts/TerminalOverlayContext'
 import type { Server } from '../lib/api'
 import {
@@ -18,6 +20,7 @@ import {
   formatDateTime,
   getTerminalConnectionLabel,
   isTerminalLocal,
+  runServerCommand,
 } from '../lib/api'
 import { loadJson, saveJson } from '../lib/storage'
 import { terminalTheme } from '../lib/terminalTheme'
@@ -25,7 +28,7 @@ import { Terminal } from 'xterm'
 import { FitAddon } from 'xterm-addon-fit'
 import 'xterm/css/xterm.css'
 
-type TabKey = 'general' | 'deployments' | 'proxy' | 'terminal' | 'danger'
+type TabKey = 'general' | 'deployments' | 'maintenance' | 'proxy' | 'terminal' | 'danger'
 
 type ServerUiConfig = {
   ssh_port: number
@@ -75,8 +78,14 @@ export function ServerDetailPage() {
   const terminalContainerRef = useRef<HTMLDivElement | null>(null)
   const [terminalReady, setTerminalReady] = useState(false)
   const { user } = useAuth()
+  const { toast } = useToast()
   const editable = canManageServers(user)
   const showTerminal = canUseTerminal(user)
+  const [runningCommand, setRunningCommand] = useState<string | null>(null)
+  const [lastCommandOutput, setLastCommandOutput] = useState<string | null>(null)
+  const [pendingAptAction, setPendingAptAction] = useState<
+    'apt_update' | 'apt_upgrade' | 'apt_list_upgradable' | null
+  >(null)
 
   const initialTab = (searchParams.get('tab') as TabKey | null) ?? 'general'
   const [tab, setTab] = useState<TabKey>(initialTab)
@@ -85,8 +94,9 @@ export function ServerDetailPage() {
   useEffect(() => {
     let next = (searchParams.get('tab') as TabKey | null) ?? 'general'
     if (next === 'terminal' && !showTerminal) next = 'general'
+    if (next === 'maintenance' && !editable) next = 'general'
     setTab(next)
-  }, [searchParams, showTerminal])
+  }, [searchParams, showTerminal, editable])
 
   useEffect(() => {
     if (!serverId) return
@@ -168,6 +178,41 @@ export function ServerDetailPage() {
       navigate('/servers')
     } finally {
       setDeleting(false)
+    }
+  }
+
+  function runMaintenanceAction(
+    action: 'apt_update' | 'apt_upgrade' | 'apt_list_upgradable' | 'docker_prune'
+  ) {
+    if (!serverId) return
+    if (action !== 'docker_prune') {
+      setPendingAptAction(action)
+      return
+    }
+    doRunMaintenanceAction(action)
+  }
+
+  async function doRunMaintenanceAction(
+    action: 'apt_update' | 'apt_upgrade' | 'apt_list_upgradable' | 'docker_prune',
+    sudoPassword?: string
+  ) {
+    if (!serverId) return
+    setPendingAptAction(null)
+    setRunningCommand(action)
+    try {
+      const result = await runServerCommand(serverId, action, sudoPassword)
+      setLastCommandOutput(result.output)
+      if (result.exit_code === 0) {
+        toast(`Command completed successfully`, 'success')
+      } else {
+        toast(`Command finished with exit code ${result.exit_code}`, 'info')
+      }
+    } catch (e) {
+      const errMsg = e instanceof Error ? e.message : 'Command failed'
+      setLastCommandOutput(`Error: ${errMsg}`)
+      toast(errMsg, 'error')
+    } finally {
+      setRunningCommand(null)
     }
   }
 
@@ -262,6 +307,24 @@ export function ServerDetailPage() {
         variant="danger"
         loading={deleting}
       />
+      <SudoPasswordModal
+        key={pendingAptAction ?? 'closed'}
+        open={!!pendingAptAction}
+        title="Sudo password"
+        message="apt commands require sudo. Enter your password to run non-interactively. Leave empty if you have passwordless sudo. The password is sent only with this request and is never stored."
+        runLabel={
+          pendingAptAction === 'apt_list_upgradable'
+            ? 'List upgradeable'
+            : pendingAptAction === 'apt_update'
+              ? 'apt update'
+              : 'apt upgrade'
+        }
+        onRun={(password) =>
+          pendingAptAction && doRunMaintenanceAction(pendingAptAction, password || undefined)
+        }
+        onCancel={() => setPendingAptAction(null)}
+        loading={!!runningCommand}
+      />
       <header className="flex items-center justify-between border-b border-zinc-800 px-4 py-4 sm:px-6 md:px-8">
         <Breadcrumbs
           items={[
@@ -290,6 +353,7 @@ export function ServerDetailPage() {
               tabs={[
                 { key: 'general', label: 'General' },
                 { key: 'deployments', label: 'Deployments' },
+                ...(editable ? [{ key: 'maintenance', label: 'Maintenance' }] : []),
                 { key: 'proxy', label: 'Proxy' },
                 ...(showTerminal ? [{ key: 'terminal', label: 'Terminal' }] : []),
                 { key: 'danger', label: 'Danger zone' },
@@ -600,6 +664,74 @@ export function ServerDetailPage() {
                       Reset deployment settings
                     </Button>
                   </div>
+                </Card>
+              </section>
+            )}
+
+            {tab === 'maintenance' && (
+              <section className="space-y-4">
+                <Card className="p-4 space-y-2">
+                  <h2 className="text-xs font-semibold uppercase tracking-wide text-zinc-400">
+                    Console output
+                  </h2>
+                  <pre className="min-h-[200px] max-h-96 overflow-auto rounded-md bg-zinc-900/80 p-3 text-xs text-zinc-300 whitespace-pre-wrap font-mono">
+                    {runningCommand
+                      ? `Running ${runningCommand}…\n\n`
+                      : lastCommandOutput ?? 'Click a button to run a command. Output will appear here.'}
+                  </pre>
+                </Card>
+
+                <Card className="p-4 space-y-4">
+                  <h2 className="text-sm font-semibold text-zinc-100">
+                    Package management (apt)
+                  </h2>
+                  <p className="text-xs text-zinc-500">
+                    Update package lists and upgrade packages on this server (Ubuntu/Debian). Requires
+                    sudo access.
+                  </p>
+                  <div className="flex flex-wrap gap-3">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => runMaintenanceAction('apt_list_upgradable')}
+                      disabled={!!runningCommand || !!pendingAptAction}
+                    >
+                      {runningCommand === 'apt_list_upgradable' ? 'Running…' : 'List upgradeable'}
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => runMaintenanceAction('apt_update')}
+                      disabled={!!runningCommand || !!pendingAptAction}
+                    >
+                      {runningCommand === 'apt_update' ? 'Running…' : 'apt update'}
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => runMaintenanceAction('apt_upgrade')}
+                      disabled={!!runningCommand || !!pendingAptAction}
+                    >
+                      {runningCommand === 'apt_upgrade' ? 'Running…' : 'apt upgrade'}
+                    </Button>
+                  </div>
+                </Card>
+
+                <Card className="p-4 space-y-4">
+                  <h2 className="text-sm font-semibold text-zinc-100">Docker cleanup</h2>
+                  <p className="text-xs text-zinc-500">
+                    Remove unused containers, networks, and images with{' '}
+                    <span className="font-mono">docker system prune -f</span>. Frees disk space
+                    without affecting running containers.
+                  </p>
+                  <Button
+                    size="sm"
+                    variant="danger"
+                    onClick={() => runMaintenanceAction('docker_prune')}
+                    disabled={!!runningCommand || !!pendingAptAction}
+                  >
+                    {runningCommand === 'docker_prune' ? 'Running…' : 'Clean Docker (prune)'}
+                  </Button>
                 </Card>
               </section>
             )}

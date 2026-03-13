@@ -120,6 +120,7 @@ export function LoginPage() {
                 id="setup-username"
                 type="text"
                 autoComplete="username"
+                autoFocus
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
                 required
@@ -153,6 +154,7 @@ export function LoginPage() {
                 type="text"
                 inputMode="numeric"
                 autoComplete="one-time-code"
+                autoFocus
                 placeholder="000000"
                 value={code}
                 onChange={(e) => setCode(e.target.value.replace(/\D/g, '').slice(0, 8))}
@@ -182,6 +184,7 @@ export function LoginPage() {
                 id="login-username"
                 type="text"
                 autoComplete="username"
+                autoFocus
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
                 required

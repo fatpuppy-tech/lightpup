@@ -5,6 +5,7 @@ import { Card } from '../components/atoms/Card'
 import { Badge } from '../components/atoms/Badge'
 import { GithubIcon } from '../components/atoms/NavIcons'
 import { DashboardSkeleton } from '../components/molecules/DashboardSkeleton'
+import { EmptyState } from '../components/molecules/EmptyState'
 import { PageHeader } from '../components/molecules/PageHeader'
 import { PageMain } from '../components/layout/PageMain'
 import { ProjectCard } from '../components/molecules/ProjectCard'
@@ -26,7 +27,7 @@ function githubRepoFromUrl(
   if (!trimmed.includes('github.com')) return null
 
   // Normalize and strip .git suffix
-  let cleaned = trimmed.replace(/\.git$/i, '')
+  const cleaned = trimmed.replace(/\.git$/i, '')
 
   // SSH form: git@github.com:org/repo
   if (cleaned.startsWith('git@github.com:')) {
@@ -197,9 +198,17 @@ export function DashboardPage() {
                   </div>
                 </div>
                 {projects.length === 0 ? (
-                  <p className="rounded-lg border border-zinc-800/80 bg-zinc-900/70 px-4 py-6 text-xs text-zinc-500">
-                    No projects yet. Create a project to add environments and deploy.
-                  </p>
+                  <EmptyState
+                    icon="project"
+                    title="No projects yet"
+                    description="Create a project to add environments and deploy applications."
+                    action={
+                      <Button size="sm" onClick={() => navigate('/projects/new')}>
+                        New project
+                      </Button>
+                    }
+                    className="py-8"
+                  />
                 ) : (
                   <div className="grid gap-3 sm:grid-cols-2">
                     {projects.slice(0, 4).map((p) => (
@@ -222,9 +231,17 @@ export function DashboardPage() {
                   </h2>
                 </div>
                 {summary.recent_deployments.length === 0 ? (
-                  <p className="rounded-lg border border-zinc-800/80 bg-zinc-900/70 px-4 py-6 text-xs text-zinc-500">
-                    No deployments yet. Deploy an application from a project to see activity here.
-                  </p>
+                  <EmptyState
+                    icon="deployment"
+                    title="No deployments yet"
+                    description="Deploy an application from a project to see activity here."
+                    action={
+                      <Button size="sm" variant="outline" onClick={() => navigate('/projects')}>
+                        View projects
+                      </Button>
+                    }
+                    className="py-8"
+                  />
                 ) : (
                   <div className="space-y-2">
                     {summary.recent_deployments.slice(0, 6).map((d) => (
@@ -278,9 +295,17 @@ export function DashboardPage() {
                   </button>
                 </div>
                 {servers.length === 0 ? (
-                  <p className="rounded-lg border border-zinc-800/80 bg-zinc-900/70 px-4 py-6 text-xs text-zinc-500">
-                    No servers. Add one to deploy to remote hosts.
-                  </p>
+                  <EmptyState
+                    icon="server"
+                    title="No servers"
+                    description="Add a server to deploy to local Docker or remote hosts."
+                    action={
+                      <Button size="sm" onClick={() => navigate('/servers/new')}>
+                        Add server
+                      </Button>
+                    }
+                    className="py-8"
+                  />
                 ) : (
                   <div className="grid gap-3 sm:grid-cols-2">
                     {servers.slice(0, 2).map((s) => (
@@ -305,9 +330,17 @@ export function DashboardPage() {
                   </button>
                 </div>
                 {applications.length === 0 ? (
-                  <p className="rounded-lg border border-zinc-800/80 bg-zinc-900/70 px-4 py-6 text-xs text-zinc-500">
-                    No applications yet. Add a project, environment, and application to deploy.
-                  </p>
+                  <EmptyState
+                    icon="app"
+                    title="No applications yet"
+                    description="Add a project, environment, and application to deploy."
+                    action={
+                      <Button size="sm" variant="outline" onClick={() => navigate('/projects')}>
+                        View projects
+                      </Button>
+                    }
+                    className="py-8"
+                  />
                 ) : (
                   <div className="grid gap-3">
                     {applications.slice(0, 4).map((a) => (

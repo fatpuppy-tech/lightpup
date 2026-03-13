@@ -80,7 +80,7 @@ export function ProjectsPage() {
             action={
               projects.length === 0 ? (
                 <Button onClick={() => navigate('/projects/new')} size="md">
-                  New app
+                  New project
                 </Button>
               ) : undefined
             }

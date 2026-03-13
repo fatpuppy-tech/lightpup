@@ -67,7 +67,7 @@ function ToastList({
       {toasts.map((t) => (
         <div
           key={t.id}
-          className="pointer-events-auto rounded-lg border px-4 py-3 text-sm shadow-lg"
+          className="pointer-events-auto flex items-start gap-3 rounded-lg border px-4 py-3 text-sm shadow-lg"
           style={{
             backgroundColor:
               t.type === 'error'
@@ -84,7 +84,17 @@ function ToastList({
             color: 'rgb(228 228 231)',
           }}
         >
-          {t.message}
+          <span className="flex-1 min-w-0">{t.message}</span>
+          <button
+            type="button"
+            onClick={() => removeToast(t.id)}
+            className="shrink-0 rounded p-1 text-zinc-400 hover:text-zinc-200 hover:bg-white/5 transition-colors"
+            aria-label="Dismiss"
+          >
+            <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+              <path d="M18 6L6 18M6 6l12 12" />
+            </svg>
+          </button>
         </div>
       ))}
     </div>

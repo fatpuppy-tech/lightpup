@@ -52,6 +52,7 @@ export function NewProjectPage() {
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 placeholder="my-project"
+                autoFocus
               />
             </div>
             <div className="space-y-1">
@@ -65,7 +66,7 @@ export function NewProjectPage() {
           </div>
           <div className="flex justify-end">
             <Button size="sm" onClick={save} disabled={saving || !name}>
-              {saving ? 'Creating…' : 'Create app'}
+              {saving ? 'Creating…' : 'Create project'}
             </Button>
           </div>
         </Card>

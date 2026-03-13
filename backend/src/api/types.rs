@@ -189,6 +189,23 @@ pub struct UpdateServerRequest {
     pub ssh_key_content: Option<String>,
 }
 
+/// Predefined server commands for package and Docker management.
+#[derive(Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub struct RunServerCommandRequest {
+    /// One of: apt_update, apt_upgrade, apt_list_upgradable, docker_prune
+    pub action: String,
+    /// Optional sudo password for apt commands. Sent only with the request, not logged or stored.
+    #[serde(default)]
+    pub sudo_password: Option<String>,
+}
+
+#[derive(Serialize)]
+pub struct RunServerCommandResponse {
+    pub output: String,
+    pub exit_code: i32,
+}
+
 #[derive(Deserialize)]
 pub struct ProvisionRequest {
     pub domain: String,

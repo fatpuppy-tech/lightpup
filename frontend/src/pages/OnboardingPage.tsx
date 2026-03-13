@@ -32,8 +32,8 @@ export function OnboardingPage() {
   const [step, setStep] = useState<Step>('server')
   const [saving, setSaving] = useState(false)
 
-  const [serverName, setServerName] = useState('')
-  const [serverAddress, setServerAddress] = useState('')
+  const [serverName, setServerName] = useState('local-docker')
+  const [serverAddress, setServerAddress] = useState('localhost')
   const [serverType, setServerType] = useState<'localhost' | 'remote'>('localhost')
   const [sshUser, setSshUser] = useState('')
   const [sshKeyPath, setSshKeyPath] = useState('')
@@ -222,11 +222,23 @@ export function OnboardingPage() {
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
-                  <button type="button" onClick={() => setServerType('localhost')} className={`p-4 rounded-lg border transition-all text-left ${isLocalhost ? 'border-emerald-500 bg-emerald-500/10' : 'border-zinc-800 hover:border-zinc-700'}`}>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setServerType('localhost')
+                      setServerName((prev) => prev || 'local-docker')
+                      setServerAddress((prev) => prev || 'localhost')
+                    }}
+                    className={`p-4 rounded-lg border transition-all text-left ${isLocalhost ? 'border-emerald-500 bg-emerald-500/10' : 'border-zinc-800 hover:border-zinc-700'}`}
+                  >
                     <div className="font-medium text-zinc-100">Local Machine</div>
                     <div className="text-xs text-zinc-500 mt-1">localhost</div>
                   </button>
-                  <button type="button" onClick={() => setServerType('remote')} className={`p-4 rounded-lg border transition-all text-left ${!isLocalhost ? 'border-emerald-500 bg-emerald-500/10' : 'border-zinc-800 hover:border-zinc-700'}`}>
+                  <button
+                    type="button"
+                    onClick={() => setServerType('remote')}
+                    className={`p-4 rounded-lg border transition-all text-left ${!isLocalhost ? 'border-emerald-500 bg-emerald-500/10' : 'border-zinc-800 hover:border-zinc-700'}`}
+                  >
                     <div className="font-medium text-zinc-100">Remote Server</div>
                     <div className="text-xs text-zinc-500 mt-1">SSH connection</div>
                   </button>

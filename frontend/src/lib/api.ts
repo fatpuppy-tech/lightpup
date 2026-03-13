@@ -117,6 +117,29 @@ export function isTerminalLocal(server: Server): boolean {
   )
 }
 
+export type RunServerCommandResult = {
+  output: string
+  exit_code: number
+}
+
+export async function runServerCommand(
+  serverId: string,
+  action: 'apt_update' | 'apt_upgrade' | 'apt_list_upgradable' | 'docker_prune',
+  sudoPassword?: string
+): Promise<RunServerCommandResult> {
+  const body: { action: string; sudo_password?: string } = { action }
+  if (sudoPassword != null && sudoPassword !== '') {
+    body.sudo_password = sudoPassword
+  }
+  return api<RunServerCommandResult>(
+    `/api/servers/${encodeURIComponent(serverId)}/commands`,
+    {
+      method: 'POST',
+      body: JSON.stringify(body),
+    }
+  )
+}
+
 const API_BASE =
   typeof window !== 'undefined' && (window as unknown as { __DEV_API__?: string }).__DEV_API__
     ? (window as unknown as { __DEV_API__: string }).__DEV_API__
