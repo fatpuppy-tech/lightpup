@@ -51,6 +51,10 @@ export function ApplicationForm({
   )
   const [selectedPreset, setSelectedPreset] = useState<AppPreset | null>(null)
   const [buildType, setBuildType] = useState<'docker' | 'docker_compose'>('docker')
+  const [githubBuildType, setGithubBuildType] = useState<'railpack' | 'docker'>(
+    initial?.build_type === 'docker' && initial?.repo_url ? 'docker' : 'railpack'
+  )
+  const [dockerfilePath, setDockerfilePath] = useState(initial?.dockerfile_path ?? 'Dockerfile')
   const [name, setName] = useState(initial?.name ?? '')
   const [customImage, setCustomImage] = useState('')
   const [domain, setDomain] = useState(initial?.domain ?? '')
@@ -93,7 +97,7 @@ export function ApplicationForm({
   }
 
   async function handleSelectRepo(repo: GithubRepo) {
-    setRepoUrl(repo.full_name)
+    setRepoUrl(repo.html_url)
     setRepoBranch(repo.default_branch)
     setRepoSearch('')
     
@@ -163,7 +167,7 @@ export function ApplicationForm({
       const buildTypeValue = deployMethod === 'quick' 
         ? 'static' 
         : deployMethod === 'github' 
-          ? 'railpack' 
+          ? githubBuildType 
           : buildType
 
       await onSubmit({
@@ -173,7 +177,7 @@ export function ApplicationForm({
         port: deployMethod === 'custom' && buildType === 'docker_compose' ? 80 : port,
         repo_url: deployMethod === 'github' ? repoUrl : null,
         repo_branch: deployMethod === 'github' ? repoBranch : null,
-        dockerfile_path: null,
+        dockerfile_path: deployMethod === 'github' && githubBuildType === 'docker' ? dockerfilePath : null,
         build_type: buildTypeValue,
         server_id: serverId || null,
         dockerfile_content: deployMethod === 'custom' && buildType === 'docker' ? dockerfileContent : null,
@@ -347,27 +351,78 @@ export function ApplicationForm({
               )}
 
               {repoUrl && (
-                <div className="p-3 rounded-md bg-emerald-500/10 border border-emerald-500/30">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <div className="font-medium text-zinc-100">{repoUrl}</div>
-                      <div className="text-xs text-zinc-500">Branch: {repoBranch}</div>
-                      {creatingWebhook && (
-                        <div className="text-xs text-emerald-400 mt-1">Setting up auto-deploy webhook...</div>
-                      )}
+                <>
+                  <div className="p-3 rounded-md bg-emerald-500/10 border border-emerald-500/30">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <div className="font-medium text-zinc-100">{repoUrl}</div>
+                        <div className="text-xs text-zinc-500">Branch: {repoBranch}</div>
+                        {creatingWebhook && (
+                          <div className="text-xs text-emerald-400 mt-1">Setting up auto-deploy webhook...</div>
+                        )}
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setRepoUrl('')
+                          setRepoBranch('main')
+                        }}
+                        className="text-xs text-zinc-500 hover:text-zinc-300"
+                      >
+                        Change
+                      </button>
                     </div>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setRepoUrl('')
-                        setRepoBranch('main')
-                      }}
-                      className="text-xs text-zinc-500 hover:text-zinc-300"
-                    >
-                      Change
-                    </button>
                   </div>
-                </div>
+
+                  <div>
+                    <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-zinc-400">
+                      Build Type
+                    </p>
+                    <div className="grid grid-cols-2 gap-3">
+                      <button
+                        type="button"
+                        onClick={() => setGithubBuildType('railpack')}
+                        className={`p-3 rounded-lg border text-left transition-all ${
+                          githubBuildType === 'railpack'
+                            ? 'border-emerald-500 bg-emerald-500/10'
+                            : 'border-zinc-700 bg-zinc-900 hover:border-zinc-600'
+                        }`}
+                      >
+                        <div className="font-medium text-zinc-100">Railpack</div>
+                        <div className="text-xs text-zinc-500 mt-0.5">Auto-detect &amp; build</div>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setGithubBuildType('docker')}
+                        className={`p-3 rounded-lg border text-left transition-all ${
+                          githubBuildType === 'docker'
+                            ? 'border-emerald-500 bg-emerald-500/10'
+                            : 'border-zinc-700 bg-zinc-900 hover:border-zinc-600'
+                        }`}
+                      >
+                        <div className="font-medium text-zinc-100">Dockerfile</div>
+                        <div className="text-xs text-zinc-500 mt-0.5">Use repo Dockerfile</div>
+                      </button>
+                    </div>
+                  </div>
+
+                  {githubBuildType === 'docker' && (
+                    <div>
+                      <label className="block text-xs font-medium text-zinc-400 mb-1">
+                        Dockerfile Path
+                      </label>
+                      <input
+                        value={dockerfilePath}
+                        onChange={(e) => setDockerfilePath(e.target.value)}
+                        placeholder="Dockerfile"
+                        className="w-full rounded-md border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-zinc-100 outline-none placeholder:text-zinc-500 focus:border-emerald-500"
+                      />
+                      <p className="text-xs text-zinc-500 mt-1">
+                        Path to Dockerfile relative to the repository root
+                      </p>
+                    </div>
+                  )}
+                </>
               )}
             </div>
           )}

@@ -124,6 +124,11 @@ impl DockerManager {
     }
 
     pub async fn pull_image(&self, image: &str) -> AppResult<()> {
+        if self.client.inspect_image(image).await.is_ok() {
+            tracing::info!("Image {} found locally, skipping pull", image);
+            return Ok(());
+        }
+
         tracing::info!("Pulling image: {}", image);
         
         let options = CreateImageOptions {
